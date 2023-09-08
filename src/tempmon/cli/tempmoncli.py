@@ -1,5 +1,5 @@
-from ..device import TemperatureMonitor
-from ..pg_sink import PostgresSink
+from tempmon.device import TemperatureMonitor
+from tempmon.pg_sink import PostgresSink
 
 def run():
     with (PostgresSink()) as sink:
