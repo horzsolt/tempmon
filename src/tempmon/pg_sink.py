@@ -5,8 +5,8 @@ import os
 from configparser import ConfigParser
 from datetime import datetime, timezone
 
-from tempmon.metric import Metric
-from .sink import Sink
+from metric import Metric
+from sink import Sink
 
 logger = logging.getLogger(__name__)
 
@@ -55,11 +55,11 @@ class PostgresSink(Sink):
 
     def store_metric(self, metric: Metric) -> None:
 
-        insert_command = f"INSERT INTO {self.schema}.conditions (time, device_id, temperature, humidity, battery)"
-        f" VALUES('{datetime.now(timezone.utc)}', '{metric.device_id}', '{metric.temperature}', '{metric.humidity}'"
-        f", '{metric.battery}');"
-        try:
+        insert_command = f'''INSERT INTO {self.schema}.conditions (time, device_id, temperature, humidity, battery)
+         VALUES('{datetime.now(timezone.utc)}', '{metric.device_id}', '{metric.temperature}', '{metric.humidity}'
+        , '{metric.battery}');'''
 
+        try:
             logger.debug(f"store_record {insert_command}")
             cursor = self.conn.cursor()
             cursor.execute(insert_command)

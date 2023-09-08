@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from .metric import Metric
+from metric import Metric
 
 class Sink(ABC):
 

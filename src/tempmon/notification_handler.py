@@ -1,7 +1,7 @@
 import logging
 from bluepy import btle
-from .metric import Metric
-from .sink import Sink
+from metric import Metric
+from sink import Sink
 
 logger = logging.getLogger(__name__)
 

@@ -1,9 +1,8 @@
 import logging
-from typing import Self
 from bluepy import btle
 from retry import retry
-from .notification_handler import DataCaptureDelegate
-from .sink import Sink
+from notification_handler import DataCaptureDelegate
+from sink import Sink
 
 logger = logging.getLogger(__name__)
 
