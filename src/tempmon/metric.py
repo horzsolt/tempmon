@@ -23,4 +23,4 @@ class Metric:
         return self._device_id
 
     def __str__(self):
-        return str(self.temperature) + " " + " " + str(self.humidity) + " " + str(self.battery)
+        return f"{self._device_id} {str(self.temperature)} {str(self.humidity)} {str(self.battery)}"

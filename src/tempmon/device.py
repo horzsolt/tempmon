@@ -4,37 +4,45 @@ from retry import retry
 from notification_handler import DataCaptureDelegate
 from sink import Sink
 
-logger = logging.getLogger(__name__)
 
 class TemperatureMonitor():
 
-    mac = "A4:C1:38:85:EC:F1"
-    connected = False
-    device = None
-
-    def __init__(self, sink: Sink) -> None:
-        self.connected = False
+    def __init__(self, sink: Sink, mac: str, device_id: str) -> None:
+        self._logger = logging.getLogger(__name__)
+        self._connected = False
         self._sink = sink
+        self._mac = mac
+        self._device_id = device_id
+        self._device = None
 
-    @retry(btle.BTLEDisconnectError, delay=2, tries=2)
+    @retry(btle.BTLEDisconnectError, delay=10, tries=20)
     def connect(self) -> None:
-        logger.info(f"Connecting to {self.mac}")
+        self._logger.info(f"Connecting to {self._device_id} ")
         try:
-            self.device = btle.Peripheral(self.mac)
-            self.connected = True
-            logger.debug("Connection done...")
+            self._device = btle.Peripheral(self._mac)
+            self._connected = True
+            self._device.setDelegate(DataCaptureDelegate(self._sink, self._device_id))
+            self._logger.debug(f"Connection done {self._device_id}")
         except btle.BTLEDisconnectError as error:
-            logger.error(error, exc_info=True)
+            self._logger.error(f"Connecting to device {self._device_id} failed. Retrying...")
+            self._logger.error(error, exc_info=False)
+            raise
 
     def receive_metrics(self) -> None:
         try:
-            if self.connected:
-                self.device.setDelegate(DataCaptureDelegate(self._sink))
-                logger.debug("Waiting for data...")
-                self.device.waitForNotifications(15.0)
+            if self._connected:
+                self._logger.debug(f"Waiting for data for {self._device_id}")
+                result = self._device.waitForNotifications(15)
+
+                if (not result):
+                    self._logger.debug(f"Receiving data from device {self._device_id} has timed out.")
+            else:
+                self._logger.debug(f"Device {self._device_id} is not connected, can't receive metrics.")
         except Exception as ex:
-            logger.error(ex, exc_info=True)
+            self._logger.error(f"Device {self._device_id} failed to receive data.")
+            self._logger.error(ex, exc_info=False)
 
     def disconnect(self) -> None:
-        if self.connected:
-            self.device.disconnect()
+        if self._connected:
+            self._device.disconnect()
+            self._logger.debug(f"Device {self._device_id} disconnected.")
