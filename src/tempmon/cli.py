@@ -1,47 +1,54 @@
-import time
+import paho.mqtt.client as mqtt
+import logging
+import os
 from device import TemperatureMonitor
 from pg_sink import PostgresSink
-import logging
-from threading import Thread
+from configparser import ConfigParser
+from mailer import sendMail
 
-def task(device_id : str, mac : str) -> None:
-
-    logger = logging.getLogger(__name__)
-    logger.debug(f"Starting task for {device_id}, {mac}")
-
-    with (PostgresSink()) as sink:
-        tm = TemperatureMonitor(sink, mac, device_id)
-        try:
-            tm.connect()
-            logger.debug(f"{device_id} starting the loop.")
-
-            while True:
-                time.sleep(10)
-                tm.receive_metrics()
-        finally:
-            logger.debug(f"{device_id} finishing and disconnecting.")
-            tm.disconnect()
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        logger.debug("Connected to MQTT Broker!")
+    else:
+        logger.debug("Failed to connect, return code %d\n", rc)
 
 def run():
 
-    logging.basicConfig(
-        format='%(asctime)s %(levelname)-8s %(message)s',
-        filename="app.log",
-        level=logging.DEBUG,
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
+    with (PostgresSink()) as sink:
+        tm = TemperatureMonitor(sink)
+        try:
+            sendMail("Starting the loop")
+            logger.debug("Starting the loop.")
 
-    #threadLock = threading.Lock()
-    threads = []
-    devices = ("A4:C1:38:85:EC:F1", "A4:C1:38:49:9A:89")
+            client = mqtt.Client('temperature monitor')
 
-    for x in devices:
-        t = Thread(target=task, args=(str(x+1), devices[x]))
-        t.start()
-        threads.append(t)
+            config_object = ConfigParser()
+            config_object.read(os.path.join(os.path.dirname(os.path.realpath(__file__)),"config.ini"))
+            serverinfo = config_object["CONFIG"]
+            mqtt_host = serverinfo["MQTT_HOST"]
+            username = serverinfo["MQTT_USER"]
+            password = serverinfo["MQTT_PWD"]
 
-    for t in threads:
-        t.join()
+            client.username_pw_set(username, password)
+            client.on_connect = on_connect
+            client.connect(mqtt_host, 1883)
+            client.subscribe('rtl_433')
+            client.on_message = tm.receive_metrics
+
+            client.loop_forever()
+
+        finally:
+            logger.debug("Finishing and disconnecting.")
+            sendMail("Finishing and disconnecting.")
+
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    filename="app.log",
+    level=logging.DEBUG,
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     run()

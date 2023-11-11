@@ -1,10 +1,15 @@
 class Metric:
 
-    def __init__(self, temperature : float, humidity : float, battery : float, device_id : int=1):
+    def __init__(self, temperature : float, humidity : float, battery : float, device_id : int, channel: int):
         self._device_id = device_id
         self._temperature = temperature
         self._humidity = humidity
         self._battery = battery
+        self._channel = channel
+
+    @property
+    def channel(self):
+        return self._channel
 
     @property
     def temperature(self):
@@ -23,4 +28,4 @@ class Metric:
         return self._device_id
 
     def __str__(self):
-        return f"{self._device_id} {str(self.temperature)} {str(self.humidity)} {str(self.battery)}"
+        return f"{self._device_id} {str(self.temperature)} {str(self.humidity)} {str(self.battery)} {str(self.channel)}"

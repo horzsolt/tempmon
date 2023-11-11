@@ -1,9 +1,9 @@
 import logging
-from typing import Self
 import psycopg2
 import os
 from configparser import ConfigParser
 from datetime import datetime, timezone
+from mailer import sendMail
 
 from metric import Metric
 from sink import Sink
@@ -28,7 +28,7 @@ class PostgresSink(Sink):
         logger.debug(f"host {self.host}")
         logger.debug(f"user {self.user}")
 
-    def __enter__(self) -> Self:
+    def __enter__(self):
         self._connect()
         return self
 
@@ -55,9 +55,9 @@ class PostgresSink(Sink):
 
     def store_metric(self, metric: Metric) -> None:
 
-        insert_command = f'''INSERT INTO {self.schema}.conditions (time, device_id, temperature, humidity, battery)
+        insert_command = f'''INSERT INTO {self.schema}.conditions (time, device_id, temperature, humidity, battery, channel)
          VALUES('{datetime.now(timezone.utc)}', '{metric.device_id}', '{metric.temperature}', '{metric.humidity}'
-        , '{metric.battery}');'''
+        , '{metric.battery}', '{metric.channel}');'''
 
         try:
             logger.debug(f"store_record {insert_command}")
@@ -66,3 +66,4 @@ class PostgresSink(Sink):
             self.conn.commit()
         except Exception as ex:
             logger.error(ex, exc_info=True)
+            sendMail(ex)

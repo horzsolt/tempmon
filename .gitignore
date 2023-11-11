@@ -1,4 +1,6 @@
 config.ini
+gmail_client.json
+token.json
 
 # Vscode
 .vscode/
