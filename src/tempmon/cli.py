@@ -1,7 +1,7 @@
 import paho.mqtt.client as mqtt
 import logging
 import os
-from device import TemperatureMonitor
+from device import DeviceMonitor
 from pg_sink import PostgresSink
 from configparser import ConfigParser
 from mailer import sendMail
@@ -15,7 +15,7 @@ def on_connect(client, userdata, flags, rc):
 def run():
 
     with (PostgresSink()) as sink:
-        tm = TemperatureMonitor(sink)
+        tm = DeviceMonitor(sink)
         try:
             sendMail("Starting the loop")
             logger.debug("Starting the loop.")
@@ -43,7 +43,7 @@ def run():
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
-    filename="app.log",
+    filename="tempmon.log",
     level=logging.DEBUG,
     datefmt='%Y-%m-%d %H:%M:%S'
 )

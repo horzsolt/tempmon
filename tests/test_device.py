@@ -2,13 +2,13 @@ import time
 import unittest
 from unittest.mock import Mock
 
-from src.tempmon.device import TemperatureMonitor
+from src.tempmon.device import DeviceMonitor
 
 class Testing(unittest.TestCase):
 
     def test_receive_metrics_more_than_once(self):
         mock = Mock()
-        tm = TemperatureMonitor(mock)
+        tm = DeviceMonitor(mock)
         try:
             tm.connect()
             tm.receive_metrics()

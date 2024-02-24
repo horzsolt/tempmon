@@ -3,6 +3,7 @@ import psycopg2
 import os
 from configparser import ConfigParser
 from datetime import datetime, timezone
+from button import Button
 from mailer import sendMail
 
 from metric import Metric
@@ -46,12 +47,11 @@ class PostgresSink(Sink):
                 host=self.host,
                 user=self.user,
                 password=self.pwd,
-                port=49431,
+                port=2665,
                 database=self.database
             )
         except Exception as ex:
             logger.error(ex, exc_info=True)
-            print(ex)
 
     def store_metric(self, metric: Metric) -> None:
 
@@ -66,4 +66,19 @@ class PostgresSink(Sink):
             self.conn.commit()
         except Exception as ex:
             logger.error(ex, exc_info=True)
-            sendMail(ex)
+            sendMail(ex.message)
+
+    def store_button(self, button: Button) -> None:
+
+        insert_command = f'''INSERT INTO {self.schema}.buttons (time, device_id, button1, button2, button3, button4, battery, misc)
+         VALUES('{datetime.now(timezone.utc)}', '{button.device_id}', '{button.button1}', '{button.button2}', '{button.button3}', '{button.button4}'
+        , '{button.battery}', '{button.misc}');'''
+
+        try:
+            logger.debug(f"store_record {insert_command}")
+            cursor = self.conn.cursor()
+            cursor.execute(insert_command)
+            self.conn.commit()
+        except Exception as ex:
+            logger.error(ex, exc_info=True)
+            sendMail(ex.message)
